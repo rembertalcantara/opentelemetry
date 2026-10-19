@@ -8,16 +8,26 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '25'
           cache: maven
-      - name: Show managed OpenTelemetry version
-        run: mvn -B -q help:evaluate -Dexpression=opentelemetry.version -DforceStdout -N || true
       - name: Build and test
-        run: mvn -B verify
+        run: |
+          set -o pipefail
+          echo "::notice::OpenTelemetry SDK managed by Spring Boot: $(mvn -B -q help:evaluate -Dexpression=opentelemetry.version -DforceStdout -N 2>/dev/null)"
+          mvn -B verify 2>&1 | tee build.log
+      - name: Report failure details as an annotation
+        if: failure()
+        run: |
+          {
+            grep -E '\[ERROR\]|Caused by|Exception|expected|Expecting|FAIL' build.log | grep -v 'at org.junit' | head -120
+            for f in */target/surefire-reports/*.txt; do [ -f "$f" ] && head -40 "$f"; done
+          } > failure.txt || true
+          msg=$(sed -e 's/%/%25/g' failure.txt | awk '{printf "%s%%0A", $0}')
+          echo "::error title=Build failure::${msg}"
 
   docker:
     runs-on: ubuntu-latest
@@ -26,6 +36,6 @@ jobs:
       matrix:
         module: [order-service, inventory-service]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Build ${{ matrix.module }} image
         run: docker build --build-arg MODULE=${{ matrix.module }} -t ${{ matrix.module }}:ci .
