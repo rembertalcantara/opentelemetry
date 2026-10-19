@@ -1,0 +1,44 @@
+# Observability backend only:      docker compose up -d
+# Backend + both services:          docker compose --profile apps up -d --build
+#
+# grafana/otel-lgtm bundles an OpenTelemetry Collector (OTLP on 4317 gRPC / 4318 HTTP),
+# Tempo (traces), Loki (logs), Prometheus/Mimir (metrics) and Grafana on http://localhost:3000.
+services:
+  lgtm:
+    image: grafana/otel-lgtm:latest
+    ports:
+      - "3000:3000"   # Grafana (no login)
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+
+  inventory-service:
+    profiles: [apps]
+    build:
+      context: .
+      args:
+        MODULE: inventory-service
+    ports:
+      - "8081:8081"
+    environment:
+      OTLP_ENDPOINT: http://lgtm:4318
+      DEPLOYMENT_ENV: docker
+    depends_on:
+      - lgtm
+
+  order-service:
+    profiles: [apps]
+    build:
+      context: .
+      args:
+        MODULE: order-service
+    ports:
+      - "8080:8080"
+    environment:
+      OTLP_ENDPOINT: http://lgtm:4318
+      INVENTORY_URL: http://inventory-service:8081
+      DEPLOYMENT_ENV: docker
+    depends_on:
+      - lgtm
+      - inventory-service

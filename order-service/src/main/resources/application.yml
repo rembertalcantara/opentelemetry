@@ -1,0 +1,68 @@
+spring:
+  application:
+    name: order-service
+  threads:
+    virtual:
+      enabled: true   # Java 25 virtual threads for requests, @Async and @Scheduled
+
+server:
+  port: 8080
+
+app:
+  inventory:
+    base-url: ${INVENTORY_URL:http://localhost:8081}
+  reconciliation:
+    interval: PT30S
+  otel:
+    metrics:   # native OpenTelemetry Metrics API (SdkMeterProvider)
+      endpoint: ${OTLP_ENDPOINT:http://localhost:4318}/v1/metrics
+      interval: 10s
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  observations:
+    annotations:
+      enabled: true          # @Observed, @Timed, @Counted, @NewSpan
+    key-values:              # low-cardinality tags added to every observation
+      "[deployment.environment]": ${DEPLOYMENT_ENV:local}
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true   # histogram buckets -> exemplars link metrics to traces
+        http.client.requests: true
+        order.place: true
+  tracing:
+    sampling:
+      probability: 1.0       # record everything in the demo; lower it in production
+    baggage:
+      remote-fields: customer.tier        # also sent as its own HTTP header
+      correlation:
+        fields: customer.tier             # copied into the MDC -> console + OTLP log attributes
+  opentelemetry:
+    resource-attributes:
+      "[service.namespace]": otel-demo
+      "[service.version]": "@project.version@"
+      "[deployment.environment.name]": ${DEPLOYMENT_ENV:local}
+    tracing:
+      sampler: parent-based-trace-id-ratio   # honours the caller's decision, ratio for new traces
+      limits:
+        max-attributes: 128
+      export:
+        otlp:
+          endpoint: ${OTLP_ENDPOINT:http://localhost:4318}/v1/traces
+    logging:
+      export:
+        otlp:
+          endpoint: ${OTLP_ENDPOINT:http://localhost:4318}/v1/logs
+  otlp:
+    metrics:   # Micrometer metrics (JVM, HTTP, custom) via OTLP
+      export:
+        url: ${OTLP_ENDPOINT:http://localhost:4318}/v1/metrics
+        step: 10s
+
+logging:
+  pattern:
+    correlation: "[${spring.application.name:},%X{traceId:-},%X{spanId:-},%X{customer.tier:-}] "

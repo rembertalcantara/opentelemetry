@@ -1,0 +1,62 @@
+spring:
+  application:
+    name: inventory-service
+  threads:
+    virtual:
+      enabled: true
+
+server:
+  port: 8081
+
+app:
+  restock:
+    interval: PT20S
+  otel:
+    metrics:
+      endpoint: ${OTLP_ENDPOINT:http://localhost:4318}/v1/metrics
+      interval: 10s
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  observations:
+    annotations:
+      enabled: true
+    key-values:
+      "[deployment.environment]": ${DEPLOYMENT_ENV:local}
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+  tracing:
+    sampling:
+      probability: 1.0
+    baggage:
+      remote-fields: customer.tier
+      correlation:
+        fields: customer.tier
+  opentelemetry:
+    resource-attributes:
+      "[service.namespace]": otel-demo
+      "[service.version]": "@project.version@"
+      "[deployment.environment.name]": ${DEPLOYMENT_ENV:local}
+    tracing:
+      sampler: parent-based-trace-id-ratio
+      export:
+        otlp:
+          endpoint: ${OTLP_ENDPOINT:http://localhost:4318}/v1/traces
+    logging:
+      export:
+        otlp:
+          endpoint: ${OTLP_ENDPOINT:http://localhost:4318}/v1/logs
+  otlp:
+    metrics:
+      export:
+        url: ${OTLP_ENDPOINT:http://localhost:4318}/v1/metrics
+        step: 10s
+
+logging:
+  pattern:
+    correlation: "[${spring.application.name:},%X{traceId:-},%X{spanId:-},%X{customer.tier:-}] "

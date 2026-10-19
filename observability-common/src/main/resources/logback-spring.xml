@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Shared by every service. Console output keeps Spring Boot's default pattern (which already
+  includes traceId/spanId); the OTEL appender sends each log record to the OpenTelemetry Logs SDK,
+  which exports it over OTLP with the trace and span ids attached.
+-->
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+
+    <appender name="OTEL" class="io.opentelemetry.instrumentation.logback.appender.v1_0.OpenTelemetryAppender">
+        <!-- thread name/id as log attributes -->
+        <captureExperimentalAttributes>true</captureExperimentalAttributes>
+        <!-- code.function / code.filepath / code.lineno -->
+        <captureCodeAttributes>true</captureCodeAttributes>
+        <!-- SLF4J 2 fluent API: log.atInfo().addKeyValue("order.id", id) becomes a log attribute -->
+        <captureKeyValuePairAttributes>true</captureKeyValuePairAttributes>
+        <captureMarkerAttribute>true</captureMarkerAttribute>
+        <!-- every MDC entry, including baggage copied there by management.tracing.baggage.correlation -->
+        <captureMdcAttributes>*</captureMdcAttributes>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="OTEL"/>
+    </root>
+</configuration>
