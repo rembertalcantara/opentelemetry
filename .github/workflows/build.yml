@@ -19,6 +19,7 @@ jobs:
           set -o pipefail
           echo "::notice::OpenTelemetry SDK managed by Spring Boot: $(mvn -B -q help:evaluate -Dexpression=opentelemetry.version -DforceStdout -N 2>/dev/null)"
           mvn -B verify 2>&1 | tee build.log
+          echo "::notice title=Tests::$(grep -E '^\[(INFO|WARNING)\] Tests run:' build.log | grep -v ' in ' | tr '\n' ' ')"
       - name: Report failure details as an annotation
         if: failure()
         run: |
