@@ -50,7 +50,8 @@ class OpenTelemetryMetricsConfiguration {
 
     @Bean
     OtelMeterFactory otelMeterFactory(ObjectProvider<SdkMeterProvider> meterProvider) {
-        MeterProvider provider = meterProvider.getIfAvailable(MeterProvider::noop);
+        SdkMeterProvider sdk = meterProvider.getIfAvailable();
+        MeterProvider provider = (sdk != null) ? sdk : MeterProvider.noop();
         return provider::get;
     }
 }

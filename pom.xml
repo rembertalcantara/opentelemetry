@@ -25,8 +25,9 @@
 
     <properties>
         <java.version>25</java.version>
-        <!-- Not managed by Spring Boot. Keep in step with the OpenTelemetry SDK version Boot manages. -->
-        <opentelemetry-logback-appender.version>2.32.0-alpha</opentelemetry-logback-appender.version>
+        <!-- Not managed by Spring Boot. Keep in step with the OpenTelemetry SDK version Boot manages
+             (Boot 4.1.1 -> OpenTelemetry 1.62.0 -> instrumentation 2.28.x). -->
+        <opentelemetry-logback-appender.version>2.28.1-alpha</opentelemetry-logback-appender.version>
     </properties>
 
     <dependencyManagement>
