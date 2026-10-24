@@ -1,0 +1,9 @@
+apiVersion: 1
+
+providers:
+  - name: OpenTelemetry demo
+    type: file
+    allowUiUpdates: true
+    options:
+      path: /otel-demo/dashboards
+      foldersFromFilesStructure: false

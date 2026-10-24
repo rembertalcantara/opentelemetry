@@ -1,5 +1,5 @@
-# Observability backend only:      docker compose up -d
-# Backend + both services:          docker compose --profile apps up -d --build
+# Everything (backend + both services):  docker compose up -d --build
+# Observability backend only (run the services from the IDE/Maven):  docker compose up -d lgtm
 #
 # grafana/otel-lgtm bundles an OpenTelemetry Collector (OTLP on 4317 gRPC / 4318 HTTP),
 # Tempo (traces), Loki (logs), Prometheus/Mimir (metrics) and Grafana on http://localhost:3000.
@@ -12,9 +12,13 @@ services:
       - "4318:4318"   # OTLP HTTP
     environment:
       GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /otel-demo/dashboards/otel-demo.json
+    volumes:
+      # Provisioned dashboard with every metric the services emit (folder "Dashboards" in Grafana).
+      - ./grafana/provisioning/dashboards.yaml:/otel-lgtm/grafana/conf/provisioning/dashboards/otel-demo.yaml:ro
+      - ./grafana/dashboards:/otel-demo/dashboards:ro
 
   inventory-service:
-    profiles: [apps]
     build:
       context: .
       args:
@@ -28,7 +32,6 @@ services:
       - lgtm
 
   order-service:
-    profiles: [apps]
     build:
       context: .
       args:
@@ -41,4 +44,22 @@ services:
       DEPLOYMENT_ENV: docker
     depends_on:
       - lgtm
+      - inventory-service
+
+  # Performance tests (not started by `up`): docker compose run --rm k6 run /scripts/load.js
+  # Scripts: smoke, load, stress, spike, soak. k6 metrics go to Prometheus over OTLP (k6_* in Grafana).
+  k6:
+    profiles: [perf]
+    image: grafana/k6:latest
+    volumes:
+      - ./k6s:/scripts:ro
+    environment:
+      ORDER_URL: http://order-service:8080
+      INVENTORY_URL: http://inventory-service:8081
+      K6_OTEL_GRPC_EXPORTER_ENDPOINT: lgtm:4317
+      K6_OTEL_GRPC_EXPORTER_INSECURE: "true"
+      K6_OTEL_FLUSH_INTERVAL: 5s
+    command: run --out opentelemetry /scripts/smoke.js
+    depends_on:
+      - order-service
       - inventory-service

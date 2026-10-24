@@ -21,7 +21,7 @@ client ──► order-service :8080 ──(HTTP: traceparent + baggage)──�
 
 ```bash
 # 1. Start the observability stack (OTLP on :4317/:4318, Grafana on http://localhost:3000)
-docker compose up -d
+docker compose up -d lgtm
 
 # 2. Start both services (two terminals)
 mvn -pl inventory-service -am spring-boot:run
@@ -31,13 +31,43 @@ mvn -pl order-service -am spring-boot:run
 scripts/generate-traffic.sh 50
 ```
 
-To run everything in containers instead, use `docker compose --profile apps up -d --build`.
+To run everything in containers instead, use `docker compose up -d --build` (it starts Grafana and both services).
 
-Then open Grafana at http://localhost:3000 and go to **Explore**:
+Grafana at http://localhost:3000 opens on the provisioned dashboard **OpenTelemetry Demo – All Metrics**. It has
+panels for every metric the services emit: orders, the native OpenTelemetry `shop.*` metrics, pipeline timers,
+inventory, HTTP, and JVM. The JSON lives in `grafana/dashboards/` and is mounted by `compose.yaml`. Edit it in
+Grafana (changes are not persisted across `docker compose down`) or in the file.
+
+To dig into individual signals, go to **Explore**:
 
 - **Tempo** (traces): search `service.name = order-service`. Every `X-Trace-Id` printed by the script is a trace id you can paste in.
 - **Loki** (logs): use `{service_name="order-service"}`. Each log line carries `trace_id`, `span_id`, `customer.tier` and the key-value attributes.
 - **Prometheus** (metrics): try `orders_placed_total`, `shop_items_sold_total`, `http_server_requests_seconds_bucket` (with exemplars) or `inventory_stock_level`.
+
+### Postman
+
+Import `postman/otel-demo.postman_collection.json`. It has a request for every endpoint of both services (orders,
+failure scenarios, inventory, actuator), with tests on the status codes. Base URLs and the default SKU, quantity and customer
+are collection variables. Run the whole collection with the Collection Runner or `newman run postman/otel-demo.postman_collection.json`.
+
+### Performance tests (k6)
+
+`k6s/` has [k6](https://grafana.com/docs/k6/) scripts that exercise every endpoint of both services: orders, each failure
+scenario (402/404/409/400), inventory, and the actuator. They run in the `grafana/k6` Docker image, so nothing needs installing.
+Start the stack first (`docker compose up -d --build`), then:
+
+```bash
+docker compose run --rm k6                          # smoke: 1 user, every endpoint once (default)
+docker compose run --rm k6 run /scripts/load.js     # 20 users for ~3 min
+docker compose run --rm k6 run /scripts/stress.js   # steps up to 150 users, aborts when >5% fail
+docker compose run --rm k6 run /scripts/spike.js    # sudden jump to 100 users
+docker compose run --rm k6 run /scripts/soak.js     # 15 users for 30 min, to look for leaks
+```
+
+Thresholds (error rate, p95 latency per endpoint group) fail the run with a non-zero exit code. Expected error responses
+(402/404/409/400) are not counted as failures, and a 409 on orders is accepted because the stock is finite. k6 sends its
+metrics to the collector too, so the Grafana dashboard has a **k6 load test** row next to the service metrics.
+To run against a local setup instead of the containers: `docker run --rm -i --network host -v "$PWD/k6s:/scripts:ro" grafana/k6 run /scripts/load.js`.
 
 ### Try a single request
 

@@ -1,0 +1,1092 @@
+{
+  "info": {
+    "_postman_id": "c5d82069-dbd9-442b-9423-4bf87e75e930",
+    "name": "OpenTelemetry Spring Boot demo",
+    "description": "Every endpoint of order-service (:8080) and inventory-service (:8081). Run the folders with the Collection Runner; order requests also check the X-Trace-Id header.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "order-service (:8080)",
+      "item": [
+        {
+          "name": "Orders",
+          "item": [
+            {
+              "name": "Place order \u2013 standard",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"expected: status is 201\", () => pm.response.to.have.status(201));",
+                      "pm.test(\"X-Trace-Id header present\", () => pm.response.to.have.header(\"X-Trace-Id\"));",
+                      "const body = pm.response.json();",
+                      "pm.collectionVariables.set(\"orderId\", body.id);",
+                      "pm.test(\"response has id and total\", () => { pm.expect(body.id).to.be.a(\"string\"); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"sku\": \"{{sku}}\",\n  \"quantity\": {{quantity}},\n  \"customerId\": \"{{customerId}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{orderUrl}}/orders",
+                  "host": [
+                    "{{orderUrl}}"
+                  ],
+                  "path": [
+                    "orders"
+                  ]
+                },
+                "description": "Standard tier. Saves the returned id into {{orderId}} for the GET request below."
+              }
+            },
+            {
+              "name": "Place order \u2013 platinum (vip-)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"expected: status is 201\", () => pm.response.to.have.status(201));",
+                      "pm.test(\"X-Trace-Id header present\", () => pm.response.to.have.header(\"X-Trace-Id\"));",
+                      "const body = pm.response.json();",
+                      "pm.collectionVariables.set(\"orderId\", body.id);",
+                      "pm.test(\"response has id and total\", () => { pm.expect(body.id).to.be.a(\"string\"); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"sku\": \"SKU-BOOK\",\n  \"quantity\": 2,\n  \"customerId\": \"vip-42\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{orderUrl}}/orders",
+                  "host": [
+                    "{{orderUrl}}"
+                  ],
+                  "path": [
+                    "orders"
+                  ]
+                },
+                "description": "Platinum tier, 15% discount, fastest inventory path."
+              }
+            },
+            {
+              "name": "Place order \u2013 gold (gold-)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"expected: status is 201\", () => pm.response.to.have.status(201));",
+                      "pm.test(\"X-Trace-Id header present\", () => pm.response.to.have.header(\"X-Trace-Id\"));",
+                      "const body = pm.response.json();",
+                      "pm.collectionVariables.set(\"orderId\", body.id);",
+                      "pm.test(\"response has id and total\", () => { pm.expect(body.id).to.be.a(\"string\"); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"sku\": \"SKU-MUG\",\n  \"quantity\": 1,\n  \"customerId\": \"gold-7\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{orderUrl}}/orders",
+                  "host": [
+                    "{{orderUrl}}"
+                  ],
+                  "path": [
+                    "orders"
+                  ]
+                },
+                "description": "Gold tier, 5% discount."
+              }
+            },
+            {
+              "name": "Get order by id",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"found: status is 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"id matches\", () => pm.expect(pm.response.json().id).to.eql(pm.collectionVariables.get(\"orderId\")));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{orderUrl}}/orders/{{orderId}}",
+                  "host": [
+                    "{{orderUrl}}"
+                  ],
+                  "path": [
+                    "orders",
+                    "{{orderId}}"
+                  ]
+                },
+                "description": "Uses {{orderId}} saved by a successful 'Place order' request."
+              }
+            },
+            {
+              "name": "Get order \u2013 not found",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('404 or error status', () => pm.expect(pm.response.code).to.be.oneOf([404]));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{orderUrl}}/orders/does-not-exist",
+                  "host": [
+                    "{{orderUrl}}"
+                  ],
+                  "path": [
+                    "orders",
+                    "does-not-exist"
+                  ]
+                },
+                "description": "Unknown id."
+              }
+            },
+            {
+              "name": "List orders",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"list: status is 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"is array\", () => pm.expect(pm.response.json()).to.be.an(\"array\"));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{orderUrl}}/orders",
+                  "host": [
+                    "{{orderUrl}}"
+                  ],
+                  "path": [
+                    "orders"
+                  ]
+                },
+                "description": "All orders held in memory."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Failure scenarios",
+          "item": [
+            {
+              "name": "Payment declined (fraud\u2026)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"expected: status is 402\", () => pm.response.to.have.status(402));",
+                      "pm.test(\"X-Trace-Id header present\", () => pm.response.to.have.header(\"X-Trace-Id\"));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"sku\": \"SKU-BOOK\",\n  \"quantity\": 1,\n  \"customerId\": \"fraudster-1\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{orderUrl}}/orders",
+                  "host": [
+                    "{{orderUrl}}"
+                  ],
+                  "path": [
+                    "orders"
+                  ]
+                },
+                "description": "customerId starting with 'fraud' makes the payment gateway decline: 402 and an error span."
+              }
+            },
+            {
+              "name": "Unknown SKU",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"expected: status is 404\", () => pm.response.to.have.status(404));",
+                      "pm.test(\"X-Trace-Id header present\", () => pm.response.to.have.header(\"X-Trace-Id\"));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"sku\": \"SKU-UNKNOWN\",\n  \"quantity\": 1,\n  \"customerId\": \"alice\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{orderUrl}}/orders",
+                  "host": [
+                    "{{orderUrl}}"
+                  ],
+                  "path": [
+                    "orders"
+                  ]
+                },
+                "description": "SKU not in inventory: 404."
+              }
+            },
+            {
+              "name": "Out of stock (SKU-LAPTOP x100)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"expected: status is 409\", () => pm.response.to.have.status(409));",
+                      "pm.test(\"X-Trace-Id header present\", () => pm.response.to.have.header(\"X-Trace-Id\"));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"sku\": \"SKU-LAPTOP\",\n  \"quantity\": 100,\n  \"customerId\": \"alice\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{orderUrl}}/orders",
+                  "host": [
+                    "{{orderUrl}}"
+                  ],
+                  "path": [
+                    "orders"
+                  ]
+                },
+                "description": "Quantity above stock: 409. A restock job refills SKU-LAPTOP every 20 s."
+              }
+            },
+            {
+              "name": "Validation \u2013 blank sku",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"expected: status is 400\", () => pm.response.to.have.status(400));",
+                      "pm.test(\"X-Trace-Id header present\", () => pm.response.to.have.header(\"X-Trace-Id\"));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"sku\": \"\",\n  \"quantity\": 1,\n  \"customerId\": \"alice\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{orderUrl}}/orders",
+                  "host": [
+                    "{{orderUrl}}"
+                  ],
+                  "path": [
+                    "orders"
+                  ]
+                },
+                "description": "Bean validation: sku must not be blank."
+              }
+            },
+            {
+              "name": "Validation \u2013 quantity 0",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"expected: status is 400\", () => pm.response.to.have.status(400));",
+                      "pm.test(\"X-Trace-Id header present\", () => pm.response.to.have.header(\"X-Trace-Id\"));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"sku\": \"SKU-BOOK\",\n  \"quantity\": 0,\n  \"customerId\": \"alice\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{orderUrl}}/orders",
+                  "host": [
+                    "{{orderUrl}}"
+                  ],
+                  "path": [
+                    "orders"
+                  ]
+                },
+                "description": "Bean validation: quantity must be positive."
+              }
+            },
+            {
+              "name": "Validation \u2013 quantity > 100",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"expected: status is 400\", () => pm.response.to.have.status(400));",
+                      "pm.test(\"X-Trace-Id header present\", () => pm.response.to.have.header(\"X-Trace-Id\"));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"sku\": \"SKU-BOOK\",\n  \"quantity\": 101,\n  \"customerId\": \"alice\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{orderUrl}}/orders",
+                  "host": [
+                    "{{orderUrl}}"
+                  ],
+                  "path": [
+                    "orders"
+                  ]
+                },
+                "description": "Bean validation: quantity at most 100."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Actuator",
+          "item": [
+            {
+              "name": "Health",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"up: status is 200\", () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{orderUrl}}/actuator/health",
+                  "host": [
+                    "{{orderUrl}}"
+                  ],
+                  "path": [
+                    "actuator",
+                    "health"
+                  ]
+                },
+                "description": ""
+              }
+            },
+            {
+              "name": "Info",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"info: status is 200\", () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{orderUrl}}/actuator/info",
+                  "host": [
+                    "{{orderUrl}}"
+                  ],
+                  "path": [
+                    "actuator",
+                    "info"
+                  ]
+                },
+                "description": ""
+              }
+            },
+            {
+              "name": "Metrics \u2013 list names",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"metrics: status is 200\", () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{orderUrl}}/actuator/metrics",
+                  "host": [
+                    "{{orderUrl}}"
+                  ],
+                  "path": [
+                    "actuator",
+                    "metrics"
+                  ]
+                },
+                "description": ""
+              }
+            },
+            {
+              "name": "Metric \u2013 orders.placed",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"metric: status is 200\", () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{orderUrl}}/actuator/metrics/orders.placed",
+                  "host": [
+                    "{{orderUrl}}"
+                  ],
+                  "path": [
+                    "actuator",
+                    "metrics",
+                    "orders.placed"
+                  ]
+                },
+                "description": "Micrometer counter."
+              }
+            },
+            {
+              "name": "Metric \u2013 orders.failed",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"metric: status is 200\", () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{orderUrl}}/actuator/metrics/orders.failed",
+                  "host": [
+                    "{{orderUrl}}"
+                  ],
+                  "path": [
+                    "actuator",
+                    "metrics",
+                    "orders.failed"
+                  ]
+                },
+                "description": "Micrometer counter, tag 'reason'."
+              }
+            },
+            {
+              "name": "Metric \u2013 http.server.requests",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"metric: status is 200\", () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{orderUrl}}/actuator/metrics/http.server.requests",
+                  "host": [
+                    "{{orderUrl}}"
+                  ],
+                  "path": [
+                    "actuator",
+                    "metrics",
+                    "http.server.requests"
+                  ]
+                },
+                "description": ""
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "inventory-service (:8081)",
+      "item": [
+        {
+          "name": "Inventory",
+          "item": [
+            {
+              "name": "List stock levels",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"levels: status is 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"is object\", () => pm.expect(pm.response.json()).to.be.an(\"object\"));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{inventoryUrl}}/inventory",
+                  "host": [
+                    "{{inventoryUrl}}"
+                  ],
+                  "path": [
+                    "inventory"
+                  ]
+                },
+                "description": "Map of SKU to stock level."
+              }
+            },
+            {
+              "name": "Get stock level by SKU",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"level: status is 200\", () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{inventoryUrl}}/inventory/{{sku}}",
+                  "host": [
+                    "{{inventoryUrl}}"
+                  ],
+                  "path": [
+                    "inventory",
+                    "{{sku}}"
+                  ]
+                },
+                "description": ""
+              }
+            },
+            {
+              "name": "Reserve stock",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"reserved: status is 201\", () => pm.response.to.have.status(201));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{inventoryUrl}}/inventory/{{sku}}/reservations?quantity={{quantity}}",
+                  "host": [
+                    "{{inventoryUrl}}"
+                  ],
+                  "path": [
+                    "inventory",
+                    "{{sku}}",
+                    "reservations"
+                  ],
+                  "query": [
+                    {
+                      "key": "quantity",
+                      "value": "{{quantity}}"
+                    }
+                  ]
+                },
+                "description": "Reserves stock directly (order-service normally calls this with traceparent + baggage). Add header 'customer.tier' to try baggage."
+              }
+            },
+            {
+              "name": "Reserve stock \u2013 unknown SKU",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"unknown sku: status is 404\", () => pm.response.to.have.status(404));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{inventoryUrl}}/inventory/SKU-UNKNOWN/reservations?quantity=1",
+                  "host": [
+                    "{{inventoryUrl}}"
+                  ],
+                  "path": [
+                    "inventory",
+                    "SKU-UNKNOWN",
+                    "reservations"
+                  ],
+                  "query": [
+                    {
+                      "key": "quantity",
+                      "value": "1"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Reserve stock \u2013 insufficient",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"insufficient: status is 409\", () => pm.response.to.have.status(409));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{inventoryUrl}}/inventory/SKU-LAPTOP/reservations?quantity=1000",
+                  "host": [
+                    "{{inventoryUrl}}"
+                  ],
+                  "path": [
+                    "inventory",
+                    "SKU-LAPTOP",
+                    "reservations"
+                  ],
+                  "query": [
+                    {
+                      "key": "quantity",
+                      "value": "1000"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Reserve with trace context",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"reserved: status is 201\", () => pm.response.to.have.status(201));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "traceparent",
+                    "value": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+                  },
+                  {
+                    "key": "baggage",
+                    "value": "customer.tier=platinum"
+                  },
+                  {
+                    "key": "customer.tier",
+                    "value": "platinum"
+                  }
+                ],
+                "url": {
+                  "raw": "{{inventoryUrl}}/inventory/SKU-BOOK/reservations?quantity=1",
+                  "host": [
+                    "{{inventoryUrl}}"
+                  ],
+                  "path": [
+                    "inventory",
+                    "SKU-BOOK",
+                    "reservations"
+                  ],
+                  "query": [
+                    {
+                      "key": "quantity",
+                      "value": "1"
+                    }
+                  ]
+                },
+                "description": "Continues an upstream trace: look up trace id 0af7651916cd43dd8448eb211c80319c in Tempo."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Actuator",
+          "item": [
+            {
+              "name": "Health",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"up: status is 200\", () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{inventoryUrl}}/actuator/health",
+                  "host": [
+                    "{{inventoryUrl}}"
+                  ],
+                  "path": [
+                    "actuator",
+                    "health"
+                  ]
+                },
+                "description": ""
+              }
+            },
+            {
+              "name": "Info",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"info: status is 200\", () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{inventoryUrl}}/actuator/info",
+                  "host": [
+                    "{{inventoryUrl}}"
+                  ],
+                  "path": [
+                    "actuator",
+                    "info"
+                  ]
+                },
+                "description": ""
+              }
+            },
+            {
+              "name": "Metrics \u2013 list names",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"metrics: status is 200\", () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{inventoryUrl}}/actuator/metrics",
+                  "host": [
+                    "{{inventoryUrl}}"
+                  ],
+                  "path": [
+                    "actuator",
+                    "metrics"
+                  ]
+                },
+                "description": ""
+              }
+            },
+            {
+              "name": "Metric \u2013 inventory.stock.level",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"metric: status is 200\", () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{inventoryUrl}}/actuator/metrics/inventory.stock.level",
+                  "host": [
+                    "{{inventoryUrl}}"
+                  ],
+                  "path": [
+                    "actuator",
+                    "metrics",
+                    "inventory.stock.level"
+                  ]
+                },
+                "description": ""
+              }
+            },
+            {
+              "name": "Metric \u2013 inventory.restock.runs",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"metric: status is 200\", () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{inventoryUrl}}/actuator/metrics/inventory.restock.runs",
+                  "host": [
+                    "{{inventoryUrl}}"
+                  ],
+                  "path": [
+                    "actuator",
+                    "metrics",
+                    "inventory.restock.runs"
+                  ]
+                },
+                "description": ""
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "orderUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "inventoryUrl",
+      "value": "http://localhost:8081"
+    },
+    {
+      "key": "sku",
+      "value": "SKU-BOOK"
+    },
+    {
+      "key": "quantity",
+      "value": "2"
+    },
+    {
+      "key": "customerId",
+      "value": "alice"
+    },
+    {
+      "key": "orderId",
+      "value": ""
+    }
+  ]
+}

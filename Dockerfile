@@ -1,6 +1,5 @@
-# Builds either service: docker build --build-arg MODULE=order-service .
 FROM maven:3.9-eclipse-temurin-25 AS build
-ARG MODULE
+ARG MODULE=order-service
 WORKDIR /workspace
 COPY pom.xml .
 COPY observability-common/pom.xml observability-common/
